@@ -1,0 +1,178 @@
+---
+title: "Argo"
+author: "Jaimie Harbin"
+date: "December 3, 2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# **Introduction**
+
+Deployment of argos began in 2000, and has since helped profile the temperature and salinty of the ocean at a rate of about 800 deployments per year [1]. 
+
+A great way to view the data recieved from the argo floats is using the 'oce' package within R. The 'oce' package allows the user to scan diverse data files from various oceanogaphic instruments.To learn more information about the 'oce' package, visit https://cran.rstudio.com/web/packages/oce/vignettes/oce.html
+
+
+# **Argo data within 'oce' package**
+
+The best way to become comfortable with how argo data can be used within the 'oce' package is to become familiar with the argo data directly embedded within the package. The first step to do so is to load the argo data and plot it's values using the following code:
+
+
+```{r, warning=FALSE, message=FALSE}
+data(package='oce') # to find data sets in oce package
+data(argo, package='oce')
+argo # to find data within the argo object
+plot(argo)
+```
+
+# **Accessing argo data in oce objects**
+
+Once you become familiar with what type of data is within the argo object, the next thing to do is to try to reproduce the plot. 
+
+Although it is possible to view data within 'oce' objects using the 'slot' and 'list' notation (eg.`d@data$salinity`yields the salinity within an oce object named d), the best way to analyze the data is to use the`[[` notation, which derives from the generic "Extract" method for accessing parts of an object [2].
+
+For example:
+```{r, message=FALSE}
+argoLat<- argo[['latitude']]
+argoLon<- argo[['longitude']]
+plot(argoLon, argoLat, xlab="Longitude", ylab='Latitude')
+```
+
+# **Plotting Coastlines** 
+
+The above code plots the latitude and longitude, however, it is also important to understand how to plot the coast lines when plotting argo data.
+
+One thing to note is 'coastlineWorldFine', which is found within the package, 'ocedata', allows the user to plot a close up of coast lines without bluriness. To plot the coastlines for the argo data, the following code is used. 
+
+```{r}
+data(package='ocedata')
+data('coastlineWorldFine', package='ocedata')
+lonlim<- c(-70, -10)
+latlim<- c(50,60)
+mapPlot(coastlineWorldFine, col='lightgray', longitudelim=lonlim, latitudelim=latlim, projection="+proj=merc", grid=FALSE)
+```
+
+**Exercise one:** Plot the coastline of Cape Breton Island.
+
+# **Combining argo data and coastlines** 
+
+After accessing the argo latitude and longitude data, and plotting the coastlines, the next step is to combine the two. When plotting the latitude and longitude on top of the coast line map, the standard `plot()` function does not work. It is therefore necessary to use the  
+`mapPoints()` function like the following:
+
+```{r}
+mapPlot(coastlineWorldFine, col='lightgray', longitudelim=lonlim, latitudelim=latlim, projection="+proj=merc", grid=FALSE)
+lat<- argo[['latitude']]
+lon<- argo[['longitude']]
+mapPoints(lon,lat)
+```
+
+# ***Understanding data within argo***
+
+When working with argo data, it's important to note the difference between argo, CTD, and section data within the 'oce' package. A CTD is a single cast, a section is a combination of CTD casts, and an argo is a reading from multiple depths and at multiple stations.
+
+Because the argo data is from multiple depths at multiple stations, this means that the data is stored in a matrix. 
+
+One way to view a matrix with a color palette is the
+`imagep()` command. To view the changes in temperature from the argo data using a color palette, the following code is used, where the axes represent the size of the matrix: 
+
+```{r}
+argoGood <- handleFlags(argo) # to get rid of 'bad' temperature data in argo
+imagep(argoGood[['temperature']])
+``` 
+
+**Exercise two:** Make a colour plot that shows the change in salinity within the argo data 
+
+# **ArgoGrid**
+The `argoGrid()`function allows the user to grid an argo float, by interpolating to fixed pressure levels. The gridding is done with approximation.
+
+**Exercise three:** Use the ```argoGrid()``` function to look at the top 100 m of argo temperature data. 
+
+# **Loading argo data into R**
+By this point, the user is familiar with the argo data within the 'oce' package, and is able to access the data and reproduce the plots. Additionally, the user has the ability to analyze the changes in argo data through a color palette, and to view specific depths by interpolation plots.
+
+The next step for understanding argo data is to load data into into R and complete the similar plots. Argo data is stored in a netCDF file or(*.NC). This type of file allows for the creation, access, and sharing of array data.
+
+One way to load argo data into R is from the website http://www.argodatamgt.org/Access-to-data/Argo-data-selection . 
+
+(Hint: Sometimes when downloading argo data, it downloads as a *.tgz file. To view these files, download the software 7-zip to unzip these files)
+
+**Exercise four:** Plot latitude and longitude argo data from the Labrador Sea and incorporate the Greenland coastline (hint: ?read.argo())
+
+#**'oce' argo functions**
+
+The 'oce' package has many functions built within it to help view and analyze argo data. 
+
+More specifically, the 'as.' functions allow to change from argo, to CTD, to section plots. For example:
+
+If the goal was to plot the summary plots of a single CTD cast from the embedded argo data, it is possible to manually plot them using the ```[[``` function. A more efficient way to do this, however, is to use the ```as.ctd()``` function. For example to plot the first CTD profile in the argo data set, use the following code:
+
+```{r}
+plot(as.ctd(argo, profile=1))
+```
+
+**Exercise five:** Explain why the ```as.section()``` command does not work with the embedded ctd data.
+
+#**Subset an Argo Object**
+
+It is possible to subset an argo object if there is a desire to view just 'adjusted' data or a certain pressure, time, longitude, or latitude. It should be noted that subsetting is different than the command ```argoGrid()``` because the ```argoGrid()``` command interpolates data, whereas ```subset()``` plots actual data. 
+
+One example of using subset would be to look at the first five time points of the argo data:
+
+```{r}
+plot(subset(argo, time> argo[['time']][1] & time< argo[['time']][5]))
+```
+
+**Exercise six:** Create a section plot of the first five argo profiles
+
+# **Answers**
+
+**Exercise one:** Plot the coastline of Cape Breton Island.
+```
+cbLon<- c(-67,-59)
+cbLat<- c(40,48)
+mapPlot(coastlineWorldFine, col='lightgray', longitudelim=cbLon, latitudelim=cbLat, projection='+proj=merc', grid=FALSE)
+```
+
+**Exercise two:** Make a colour plot that shows the change in salinity within the argo data 
+```
+GoodSalinity <- handleFlags(argo) 
+imagep(GoodSalinity[['salinity']])
+```
+
+**Exercise three:** Use the ```argoGrid()``` function to look at the top 100 m of argo temperature data. 
+
+```
+data(argo)
+g<- argoGrid(argo, p=seq(0,100))  
+t<- g[['time']] # to set the x axis
+z<- -g[['pressure']][,1]  #the (-) is because for image p, values have to be increasing. The [,1] means that we are only going to look at the first argo
+imagep(t, z, t(g[['temperature']]), ylim=c(-100,0), zlim=c(0,20)) #We set the z limit to avoid 'bad' temperature data
+```
+**Exercise four:** Plot some latitude and longitude data of argo in the Labrador Sea and incorporate the Greenland coastline (hint: ?read.argo())
+
+```
+opendata<- read.argo('C:/Users/harbinj/Downloads/DataSelection_20191203_170256_9371128/argo-profiles-3901668.nc')
+opendata # To view the parameters
+dataLonLim<- c(-50,-40)
+dataLatLim<- c(55,62)
+mapPlot(coastlineWorldFine, col='lightgray', longitudelim=dataLonLim, latitudelim=dataLatLim, projection="+proj=merc", grid=FALSE) # To get the Greenland coastline
+dataLat<- opendata[['latitude']]
+dataLon<- opendata[['longitude']]
+mapPoints(dataLon, dataLat)
+```
+**Exercise five:** Explain why the ```as.section()``` command does not work with the embedded ctd data.
+
+The embedded CTD data is solely from one cast. A section plot is a combination of CTD casts, and therefore the ```as.section()``` command does not work for the embedded CTD data. 
+
+**Exercise six:** Create a section plot of the first five argo profiles
+```
+ArgoSec<- as.section(subset(argo, profile<5))
+plot(ArgoSec)
+```
+
+#**References**
+
+http://www.argo.ucsd.edu/About_Argo.html
+https://cran.rstudio.com/web/packages/oce/vignettes/oce.html
+
